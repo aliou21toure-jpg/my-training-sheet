@@ -1,30 +1,32 @@
-import Link from "next/link";
-import { ChevronRight, FileSpreadsheet, LogOut } from "lucide-react";
-import { signOutAction } from "./actions";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { TodayScreen } from "@/components/today/today-screen";
+import { getDb } from "@/db/client";
+import { getTodayView } from "@/features/today/get-today";
+import { requireOwner } from "@/lib/auth/current-owner";
 
-/** Temporary home until the Today screen (week 2, task 3). */
-export default function Home() {
+export default function TodayPage() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 pb-16 pt-[max(env(safe-area-inset-top),3.5rem)]">
-      <header className="flex flex-col gap-1 px-1">
-        <p className="text-[13px] font-semibold uppercase tracking-wide text-accent">My Training Sheet</p>
-        <h1 className="text-[32px] font-bold leading-tight tracking-tight">Bonjour, Alex</h1>
-        <p className="text-[15px] text-text-muted">L’écran Aujourd’hui arrive à l’étape suivante.</p>
-      </header>
+    <Suspense fallback={<TodaySkeleton />}>
+      <Today />
+    </Suspense>
+  );
+}
 
-      <nav aria-label="Réglages" className="overflow-hidden rounded-[20px] bg-card">
-        <Link href="/settings/import" className="flex min-h-14 items-center gap-3 px-4">
-          <FileSpreadsheet aria-hidden size={20} className="text-accent" />
-          <span className="flex-1 text-[16px]">Importer le programme</span>
-          <ChevronRight aria-hidden size={18} className="text-text-muted" />
-        </Link>
-        <form action={signOutAction} className="border-t border-line">
-          <button type="submit" className="flex min-h-14 w-full items-center gap-3 px-4 text-left">
-            <LogOut aria-hidden size={20} className="text-text-muted" />
-            <span className="flex-1 text-[16px]">Se déconnecter</span>
-          </button>
-        </form>
-      </nav>
+async function Today() {
+  await connection(); // "today" depends on the request time: never prerendered
+  const owner = await requireOwner();
+  const view = await getTodayView(getDb(), owner.id, new Date());
+  return <TodayScreen view={view} />;
+}
+
+function TodaySkeleton() {
+  return (
+    <main aria-busy="true" className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 pt-14 lg:max-w-5xl lg:px-10 lg:pt-12">
+      <div className="h-4 w-36 animate-pulse rounded bg-fill" />
+      <div className="h-9 w-56 animate-pulse rounded-lg bg-fill" />
+      <div className="h-36 animate-pulse rounded-[20px] bg-card" />
+      <div className="h-80 animate-pulse rounded-[24px] bg-card" />
     </main>
   );
 }

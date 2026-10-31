@@ -1,0 +1,1 @@
+ALTER TABLE "personal_settings" ADD COLUMN "display_name" text;

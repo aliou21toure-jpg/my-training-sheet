@@ -50,6 +50,8 @@ export const personalSettings = pgTable("personal_settings", {
   ownerId: uuid("owner_id")
     .primaryKey()
     .references(() => ownerAccount.id, { onDelete: "cascade" }),
+  /** First name shown in the greeting. Optional. */
+  displayName: text("display_name"),
   theme: theme("theme").notNull().default("system"),
   unit: weightUnit("unit").notNull().default("kg"),
   /** IANA zone used to decide what "today" is for the training calendar. */

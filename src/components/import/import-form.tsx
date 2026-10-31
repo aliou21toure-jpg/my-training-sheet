@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CheckCircle2, FileSpreadsheet, LoaderCircle } from "lucide-react";
-import { startTransition, useActionState, useState } from "react";
+import { startTransition, useActionState, useCallback, useState } from "react";
 import {
   previewImport,
   saveImport,
@@ -22,6 +22,13 @@ export function ImportForm() {
   const [previewedFile, setPreviewedFile] = useState<File | null>(null);
   // Which save result belongs to the preview on screen.
   const [savedFor, setSavedFor] = useState<File | null>(null);
+
+  // A file picked before the page finished loading fires no React onChange:
+  // read whatever the input already holds once React attaches to it.
+  const syncPickedFile = useCallback((input: HTMLInputElement | null) => {
+    const picked = input?.files?.[0];
+    if (picked) setFileName(picked.name);
+  }, []);
 
   function analyse(formData: FormData) {
     const file = formData.get("workbook");
@@ -57,6 +64,7 @@ export function ImportForm() {
           <span className="text-[15px] font-semibold">{fileName ?? "Choisir ton fichier .xlsx"}</span>
           <span className="text-[13px] text-text-muted">Lu en mémoire, jamais stocké. 900 Ko maximum.</span>
           <input
+            ref={syncPickedFile}
             id="workbook"
             name="workbook"
             type="file"

@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Importer le programme · My Training
 export default function ImportPage() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 pb-16 pt-[max(env(safe-area-inset-top),1.5rem)] sm:px-6">
-      <Link href="/" className="-ml-1 flex min-h-11 w-fit items-center text-[17px] text-accent">
+      <Link href="/settings" className="-ml-1 flex min-h-11 w-fit items-center text-[17px] text-accent">
         <ChevronLeft aria-hidden size={22} strokeWidth={2.2} />
         Réglages
       </Link>

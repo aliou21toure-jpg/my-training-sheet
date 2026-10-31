@@ -1,8 +1,9 @@
 /**
  * Creates THE owner account (there is no sign-up page).
  *
- *   pnpm owner:create you@example.com
+ *   pnpm owner:create you@example.com "Prénom"
  *
+ * The first name is optional (used in the greeting).
  * The password is typed in the terminal (hidden), never passed as an
  * argument, so it does not end up in your shell history.
  */
@@ -49,7 +50,8 @@ async function main() {
       .insert(ownerAccount)
       .values({ email, passwordHash: await hashPassword(password) })
       .returning({ id: ownerAccount.id });
-    await db.insert(personalSettings).values({ ownerId: owner!.id });
+    const displayName = process.argv[3]?.trim().slice(0, 40) || null;
+    await db.insert(personalSettings).values({ ownerId: owner!.id, displayName });
     console.log(`Compte créé pour ${email}.`);
   } catch (error) {
     const code = (error as { code?: string; cause?: { code?: string } }).code ?? (error as { cause?: { code?: string } }).cause?.code;
