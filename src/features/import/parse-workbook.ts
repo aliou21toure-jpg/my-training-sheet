@@ -9,7 +9,11 @@ import ExcelJS from "exceljs";
 import { parseProgram } from "./parse-program";
 import type { ImportResult, SheetRow } from "./types";
 
-export const MAX_WORKBOOK_BYTES = 2 * 1024 * 1024; // 2 MB — the real file is ~10 KB
+/**
+ * 900 KB: the real file is ~10 KB, and Server Actions refuse request
+ * bodies over 1 MB by default (multipart overhead included).
+ */
+export const MAX_WORKBOOK_BYTES = 900 * 1024;
 
 /** .xlsx files are ZIP archives: they start with "PK\x03\x04". */
 function isZip(bytes: Uint8Array): boolean {
@@ -38,7 +42,7 @@ export async function parseWorkbook(data: ArrayBuffer | Uint8Array): Promise<Imp
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
 
   if (bytes.byteLength > MAX_WORKBOOK_BYTES) {
-    return { ok: false, error: { code: "too_large", message: "Fichier trop volumineux (2 Mo maximum)." } };
+    return { ok: false, error: { code: "too_large", message: "Fichier trop volumineux (900 Ko maximum)." } };
   }
   if (!isZip(bytes)) {
     return { ok: false, error: { code: "not_xlsx", message: "Ce fichier n'est pas un classeur Excel (.xlsx)." } };
