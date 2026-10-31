@@ -1,0 +1,22 @@
+# Local PostgreSQL for development only.
+# Credentials here are local, throw-away values — never reuse them in production.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mts
+      POSTGRES_PASSWORD: mts
+      POSTGRES_DB: my_training_sheet
+    ports:
+      - "127.0.0.1:5432:5432" # reachable from this Mac only
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mts -d my_training_sheet"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
