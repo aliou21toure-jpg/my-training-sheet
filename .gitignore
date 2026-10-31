@@ -30,8 +30,17 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — only the example is committed
 .env*
+!.env.example
+
+# private training data — never committed (synthetic fixtures only)
+*.xlsx
+*.xls
+*.csv
+!tests/fixtures/**/*.xlsx
+!tests/fixtures/**/*.csv
+/private/
 
 # vercel
 .vercel

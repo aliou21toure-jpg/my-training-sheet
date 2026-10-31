@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens — My Training Sheet
+ * One neutral iOS-like base + a single soft violet accent.
+ * Light values on :root, dark values under prefers-color-scheme
+ * (a later task adds an explicit Light / Dark / System toggle).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --text: #1c1c1e;
+  --text-muted: #6c6c70;
+  --fill: #e9e9ee;
+  --line: rgb(60 60 67 / 0.12);
+  --accent: #5e4bd8;
+  --accent-soft: #eeebfc;
+  --on-accent: #ffffff;
+  --positive: #1e7a46;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #000000;
+    --card: #1c1c1e;
+    --text: #f5f5f7;
+    --text-muted: #98989f;
+    --fill: #2c2c2e;
+    --line: rgb(255 255 255 / 0.1);
+    --accent: #a496ff;
+    --accent-soft: #2b2652;
+    --on-accent: #15112e;
+    --positive: #4cd08a;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-fill: var(--fill);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-positive: var(--positive);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
