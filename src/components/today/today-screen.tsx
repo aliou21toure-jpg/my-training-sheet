@@ -5,7 +5,7 @@ import { WeekStrip } from "./week-strip";
 
 const SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
-export function TodayScreen({ view }: { view: TodayView }) {
+export function TodayScreen({ view, startKey }: { view: TodayView; startKey: string }) {
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 pb-10 pt-[max(env(safe-area-inset-top),3.5rem)] sm:px-5 lg:max-w-5xl lg:px-10 lg:pt-12">
       <header className="flex flex-col gap-1 px-1">
@@ -18,7 +18,7 @@ export function TodayScreen({ view }: { view: TodayView }) {
 
       <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-6">
         <div className="order-2 lg:order-1">
-          <TodayCard view={view} />
+          <TodayCard view={view} startKey={startKey} />
         </div>
 
         <div className="order-1 flex flex-col gap-5 lg:order-2">

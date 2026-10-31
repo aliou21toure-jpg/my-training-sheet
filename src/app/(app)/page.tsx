@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { TodayScreen } from "@/components/today/today-screen";
@@ -17,7 +18,7 @@ async function Today() {
   await connection(); // "today" depends on the request time: never prerendered
   const owner = await requireOwner();
   const view = await getTodayView(getDb(), owner.id, new Date());
-  return <TodayScreen view={view} />;
+  return <TodayScreen view={view} startKey={randomUUID()} />;
 }
 
 function TodaySkeleton() {

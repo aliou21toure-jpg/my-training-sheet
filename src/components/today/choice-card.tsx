@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import type { PlannedDay } from "@/features/program/load-program";
-import { BlockSummary, StartLink, cardClass } from "./plan-parts";
+import { BlockSummary, cardClass } from "./plan-parts";
+import { StartButton } from "./start-button";
 
 /** Saturday: one option among several. The choice is made here, then carried to the workout. */
-export function ChoiceCard({ day, eyebrow }: { day: PlannedDay; eyebrow: string }) {
+export function ChoiceCard({ day, eyebrow, startKey }: { day: PlannedDay; eyebrow: string; startKey: string }) {
   const [selected, setSelected] = useState(day.variants[0]?.number ?? 1);
   const variant = day.variants.find((v) => v.number === selected) ?? day.variants[0];
   const minutes = variant?.blocks.filter((b) => !b.optional && b.durationMinutes).reduce((n, b) => n + (b.durationMinutes ?? 0), 0);
@@ -41,7 +42,7 @@ export function ChoiceCard({ day, eyebrow }: { day: PlannedDay; eyebrow: string 
       </div>
 
       {variant && <BlockSummary blocks={variant.blocks} />}
-      <StartLink href={`/workout?option=${selected}`} />
+      <StartButton startKey={startKey} option={selected} />
     </section>
   );
 }

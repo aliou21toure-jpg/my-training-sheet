@@ -3,9 +3,10 @@ import { CheckCircle2, FileSpreadsheet, Footprints, Moon } from "lucide-react";
 import type { TodayView } from "@/features/today/get-today";
 import { ChoiceCard } from "./choice-card";
 import { BlockSummary, StartLink, cardClass } from "./plan-parts";
+import { StartButton } from "./start-button";
 
 /** The big card: what today holds, depending on the kind of day. */
-export function TodayCard({ view }: { view: TodayView }) {
+export function TodayCard({ view, startKey }: { view: TodayView; startKey: string }) {
   const day = view.today;
   const eyebrow = view.dateLabel.split(" ")[0]!.replace(/^./, (c) => c.toUpperCase());
 
@@ -79,7 +80,7 @@ export function TodayCard({ view }: { view: TodayView }) {
     );
   }
 
-  if (day.kind === "choice") return <ChoiceCard day={day} eyebrow={eyebrow} />;
+  if (day.kind === "choice") return <ChoiceCard day={day} eyebrow={eyebrow} startKey={startKey} />;
 
   const main = day.variants[0];
   return (
@@ -90,7 +91,7 @@ export function TodayCard({ view }: { view: TodayView }) {
         {day.durationText && <p className="text-[15px] text-text-muted">Environ {day.durationText}</p>}
       </div>
       {main && <BlockSummary blocks={main.blocks} />}
-      <StartLink href="/workout" />
+      <StartButton startKey={startKey} />
     </section>
   );
 }
