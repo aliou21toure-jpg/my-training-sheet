@@ -40,12 +40,23 @@ const UNIQUE = "23505";
 const CHECK = "23514";
 const RESTRICT = "23001"; // ON DELETE RESTRICT
 
+/**
+ * A finished session with BOTH timestamps set from the same clock.
+ * (Mixing Node's new Date() with Postgres now() can put the end 1 ms
+ * before the start — the end_after_start check rightly refuses that.)
+ */
+const finished = () => ({
+  status: "completed" as const,
+  startedAt: new Date(Date.now() - 60 * 60_000),
+  endedAt: new Date(),
+});
+
 describe("migration", () => {
-  it("creates the 13 tables", async () => {
+  it("creates the 14 tables", async () => {
     const res = await t.client.query<{ n: number }>(
       "select count(*)::int as n from information_schema.tables where table_schema = 'public'",
     );
-    expect(res.rows[0]?.n).toBe(13);
+    expect(res.rows[0]?.n).toBe(14);
   });
 });
 
@@ -144,7 +155,7 @@ describe("workout sessions", () => {
     );
 
     // Once finished, a new session can start.
-    await t.db.update(workoutSessions).set({ status: "completed", endedAt: new Date() }).where(eq(workoutSessions.id, first!.id));
+    await t.db.update(workoutSessions).set({ ...finished() }).where(eq(workoutSessions.id, first!.id));
     const [second] = await t.db.insert(workoutSessions).values({ planSnapshot: snapshot, idempotencyKey: randomUUID() }).returning();
     expect(second!.isActive).toBe(true);
     await t.db.update(workoutSessions).set({ status: "abandoned", endedAt: new Date() }).where(eq(workoutSessions.id, second!.id));
@@ -152,10 +163,10 @@ describe("workout sessions", () => {
 
   it("ignores a double-tap: the same idempotency key cannot create two sessions", async () => {
     const key = randomUUID();
-    const [s] = await t.db.insert(workoutSessions).values({ planSnapshot: snapshot, idempotencyKey: key, status: "completed", endedAt: new Date() }).returning();
+    const [s] = await t.db.insert(workoutSessions).values({ planSnapshot: snapshot, idempotencyKey: key, ...finished() }).returning();
     expect(s).toBeDefined();
     await expectPgError(
-      t.db.insert(workoutSessions).values({ planSnapshot: snapshot, idempotencyKey: key, status: "completed", endedAt: new Date() }),
+      t.db.insert(workoutSessions).values({ planSnapshot: snapshot, idempotencyKey: key, ...finished() }),
       UNIQUE,
     );
   });
@@ -176,7 +187,7 @@ describe("workout sessions", () => {
   it("stores one row per set, refuses duplicates and negative values, keeps missing values null", async () => {
     const [session] = await t.db
       .insert(workoutSessions)
-      .values({ planSnapshot: snapshot, idempotencyKey: randomUUID(), status: "completed", endedAt: new Date() })
+      .values({ planSnapshot: snapshot, idempotencyKey: randomUUID(), ...finished() })
       .returning();
     const [exercise] = await t.db.insert(exercises).values({ name: "Incline dumbbell press" }).returning();
     const base = { sessionId: session!.id, exerciseId: exercise!.id, snapshotKey: "v1.b1.e2" };
@@ -196,7 +207,7 @@ describe("workout sessions", () => {
     const [program] = await t.db.insert(trainingPrograms).values({ version: 30 }).returning();
     const [session] = await t.db
       .insert(workoutSessions)
-      .values({ planSnapshot: { title: "Pull", programVersion: 30 }, idempotencyKey: randomUUID(), status: "completed", endedAt: new Date() })
+      .values({ planSnapshot: { title: "Pull", programVersion: 30 }, idempotencyKey: randomUUID(), ...finished() })
       .returning();
 
     await t.db.delete(trainingPrograms).where(eq(trainingPrograms.id, program!.id));

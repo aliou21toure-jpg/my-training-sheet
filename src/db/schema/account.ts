@@ -34,6 +34,18 @@ export const authSessions = pgTable(
   (t) => [index("auth_sessions_expires_at_idx").on(t.expiresAt)],
 );
 
+/** Sign-in attempts, to slow down password guessing. `key` is a hash of the client IP. */
+export const loginAttempts = pgTable(
+  "login_attempts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    key: text("key").notNull(),
+    succeeded: boolean("succeeded").notNull(),
+    attemptedAt: timestamp("attempted_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("login_attempts_key_time_idx").on(t.key, t.attemptedAt)],
+);
+
 export const personalSettings = pgTable("personal_settings", {
   ownerId: uuid("owner_id")
     .primaryKey()

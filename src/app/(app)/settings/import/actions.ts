@@ -8,7 +8,7 @@
 import { parseWorkbook } from "@/features/import/parse-workbook";
 import type { ImportIssue, ProgramDraft } from "@/features/import/types";
 import { validateUpload } from "@/features/import/validate-upload";
-import { privateActionsAllowed } from "@/lib/auth/guard";
+import { requireOwner } from "@/lib/auth/current-owner";
 
 export type PreviewState =
   | { status: "idle" }
@@ -16,9 +16,9 @@ export type PreviewState =
   | { status: "ready"; fileName: string; program: ProgramDraft; issues: ImportIssue[] };
 
 export async function previewImport(_previous: PreviewState, formData: FormData): Promise<PreviewState> {
-  if (!privateActionsAllowed()) {
-    return { status: "error", message: "L'import sera disponible une fois la connexion en place.", fileName: null };
-  }
+  // Server Actions are public HTTP endpoints: each one checks the session itself,
+  // even though the page around it is already protected.
+  await requireOwner();
 
   const check = validateUpload(formData.get("workbook"));
   if (!check.ok) return { status: "error", message: check.message, fileName: null };
