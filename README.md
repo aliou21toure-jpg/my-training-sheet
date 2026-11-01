@@ -2,6 +2,8 @@
 
 A private, single-user workout tracker that turns an Excel training program into a polished, iPhone-first app: see today's workout, log every set in the gym (even offline), reschedule the week, and follow progress over time.
 
+**Live app:** [training.sadiatoure.dev](https://training.sadiatoure.dev) (private, owner sign-in only).
+
 <p align="center">
   <img src="docs/screenshots/today-light.png" width="200" alt="Today screen" />
   <img src="docs/screenshots/workout-light.png" width="200" alt="Workout logging screen" />
