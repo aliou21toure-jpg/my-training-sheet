@@ -18,7 +18,8 @@ export function getDb(): Db {
   if (!url) {
     throw new Error("DATABASE_URL is not set. Copy .env.example to .env.local and fill it in.");
   }
-  const db: Db = drizzle(postgres(url, { max: 5 }), { schema });
+  // prepare: false keeps it compatible with transaction-mode poolers (Supabase, Neon).
+  const db: Db = drizzle(postgres(url, { max: 5, prepare: false }), { schema });
   globalForDb.appDb = db;
   return db;
 }
