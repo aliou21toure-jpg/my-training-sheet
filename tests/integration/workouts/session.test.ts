@@ -66,17 +66,17 @@ afterAll(async () => {
 
 describe("starting a workout", () => {
   it("needs an imported program", async () => {
-    await expectWorkoutError(startWorkout(db, { weekday: 1, idempotencyKey: randomUUID() }), "no_program");
+    await expectWorkoutError(startWorkout(db, { date: "2026-11-02", idempotencyKey: randomUUID() }), "no_program");
   });
 
   it("refuses rest and recovery days", async () => {
     await importProgram();
-    await expectWorkoutError(startWorkout(db, { weekday: 7, idempotencyKey: randomUUID() }), "rest_day");
-    await expectWorkoutError(startWorkout(db, { weekday: 3, idempotencyKey: randomUUID() }), "rest_day");
+    await expectWorkoutError(startWorkout(db, { date: "2026-11-01", idempotencyKey: randomUUID() }), "rest_day");
+    await expectWorkoutError(startWorkout(db, { date: "2026-11-04", idempotencyKey: randomUUID() }), "rest_day");
   });
 
   it("freezes Monday's plan in a snapshot, optional sections included", async () => {
-    const { sessionId, resumed } = await startWorkout(db, { weekday: 1, idempotencyKey: randomUUID() });
+    const { sessionId, resumed } = await startWorkout(db, { date: "2026-11-02", idempotencyKey: randomUUID() });
     expect(resumed).toBe(false);
     const s = await getSession(db, sessionId);
     expect(s!.status).toBe("in_progress");
@@ -92,7 +92,7 @@ describe("starting a workout", () => {
 
   it("resumes the unfinished workout instead of starting a second one", async () => {
     const active = await getActiveSessionId(db);
-    const again = await startWorkout(db, { weekday: 2, idempotencyKey: randomUUID() });
+    const again = await startWorkout(db, { date: "2026-11-03", idempotencyKey: randomUUID() });
     expect(again).toEqual({ sessionId: active, resumed: true });
   });
 });
@@ -196,7 +196,7 @@ describe("history", () => {
 
   it("shows the previous session's sets and detects new records", async () => {
     first = (await db.select({ id: workoutSessions.id }).from(workoutSessions).where(eq(workoutSessions.status, "completed")))[0]!.id;
-    second = (await startWorkout(db, { weekday: 1, idempotencyKey: randomUUID() })).sessionId;
+    second = (await startWorkout(db, { date: "2026-11-02", idempotencyKey: randomUUID() })).sessionId;
     const s = (await getSession(db, second))!;
     const squatId = s.snapshot.blocks[0]!.exercises[0]!.exerciseId;
 
@@ -227,7 +227,7 @@ describe("history", () => {
     expect(old.snapshot.programVersion).toBe(1);
     expect(old.snapshot.blocks[0]!.exercises[0]!.name).toBe("Squat");
 
-    const fresh = await startWorkout(db, { weekday: 1, idempotencyKey: randomUUID() });
+    const fresh = await startWorkout(db, { date: "2026-11-02", idempotencyKey: randomUUID() });
     const now = (await getSession(db, fresh.sessionId))!;
     expect(now.snapshot.programVersion).toBe(2);
     expect(now.snapshot.blocks[0]!.exercises[0]!.name).toBe("Front squat");
@@ -236,7 +236,7 @@ describe("history", () => {
   });
 
   it("Saturday option 2: HIIT and swim become timed entries in minutes", async () => {
-    const { sessionId } = await startWorkout(db, { weekday: 6, option: 2, idempotencyKey: randomUUID() });
+    const { sessionId } = await startWorkout(db, { date: "2026-11-07", option: 2, idempotencyKey: randomUUID() });
     const s = (await getSession(db, sessionId))!;
     expect(s.snapshot).toMatchObject({ variantNumber: 2, variantLabel: "HIIT", title: "Option 2 · HIIT" });
     expect(s.snapshot.blocks.map((b) => [b.kind, b.exercises[0]?.durationUnit])).toEqual([
@@ -248,9 +248,9 @@ describe("history", () => {
 
   it("the same start key twice gives the same session", async () => {
     const key = randomUUID();
-    const a = await startWorkout(db, { weekday: 2, idempotencyKey: key });
+    const a = await startWorkout(db, { date: "2026-11-03", idempotencyKey: key });
     await finishSession(db, a.sessionId);
-    const b = await startWorkout(db, { weekday: 2, idempotencyKey: key });
+    const b = await startWorkout(db, { date: "2026-11-03", idempotencyKey: key });
     expect(b).toEqual({ sessionId: a.sessionId, resumed: true });
   });
 });

@@ -6,8 +6,9 @@ import { BlockSummary, cardClass } from "./plan-parts";
 import { StartButton } from "./start-button";
 
 /** Saturday: one option among several. The choice is made here, then carried to the workout. */
-export function ChoiceCard({ day, eyebrow, startKey }: { day: PlannedDay; eyebrow: string; startKey: string }) {
-  const [selected, setSelected] = useState(day.variants[0]?.number ?? 1);
+export function ChoiceCard({ day, eyebrow, startKey, initialOption }: { day: PlannedDay; eyebrow: string; startKey: string; initialOption: number | null }) {
+  // Starts on the option chosen in advance in the calendar, if any.
+  const [selected, setSelected] = useState(initialOption ?? day.variants[0]?.number ?? 1);
   const variant = day.variants.find((v) => v.number === selected) ?? day.variants[0];
   const minutes = variant?.blocks.filter((b) => !b.optional && b.durationMinutes).reduce((n, b) => n + (b.durationMinutes ?? 0), 0);
 

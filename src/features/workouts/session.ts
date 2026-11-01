@@ -10,6 +10,7 @@ import { z } from "zod";
 import { exercises, setLogs, workoutSessions } from "@/db/schema";
 import type { Db } from "@/db/types";
 import { loadActiveProgram } from "@/features/program/load-program";
+import { resolveRange } from "@/features/schedule/schedule";
 import { buildSnapshot, findSnapshotExercise, type WorkoutSnapshot } from "./snapshot";
 import type { LoggedSet, PersonalBest } from "./summary";
 
@@ -43,13 +44,14 @@ const activeSecondsSql = sql<number>`greatest(0, extract(epoch from (coalesce(${
 /* ---------- start ---------- */
 
 export const startInputSchema = z.object({
-  weekday: z.number().int().min(1).max(7),
+  /** Local calendar date of the workout ("2026-11-02"). */
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   option: z.number().int().min(1).max(20).optional(),
   idempotencyKey: z.string().uuid(),
 });
 
 export async function startWorkout(db: Db, input: z.input<typeof startInputSchema>): Promise<{ sessionId: string; resumed: boolean }> {
-  const { weekday, option, idempotencyKey } = startInputSchema.parse(input);
+  const { date, option, idempotencyKey } = startInputSchema.parse(input);
 
   // Same tap sent twice → the same session.
   const [sameKey] = await db.select({ id: workoutSessions.id }).from(workoutSessions).where(eq(workoutSessions.idempotencyKey, idempotencyKey));
@@ -61,11 +63,13 @@ export async function startWorkout(db: Db, input: z.input<typeof startInputSchem
 
   const program = await loadActiveProgram(db);
   if (!program) throw new WorkoutError("no_program", "Aucun programme importé.");
-  const day = program.days.find((d) => d.weekday === weekday);
+  // The calendar decides what this date holds (moved workouts, Saturday option chosen in advance).
+  const scheduled = (await resolveRange(db, program, [date])).get(date)!;
+  const day = scheduled.day;
   if (!day || day.kind === "rest" || day.kind === "recovery" || day.variants.length === 0) {
     throw new WorkoutError("rest_day", "Pas de séance prévue ce jour-là.");
   }
-  const variant = day.variants.find((v) => v.number === option) ?? day.variants[0]!;
+  const variant = day.variants.find((v) => v.number === (option ?? scheduled.optionNumber)) ?? day.variants[0]!;
 
   // Sections without exercise rows (HIIT, swim) get a catalogue entry so their duration has a history.
   const sectionIds = new Map<string, string>();

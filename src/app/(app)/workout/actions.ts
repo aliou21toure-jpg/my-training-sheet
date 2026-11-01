@@ -6,7 +6,7 @@
  */
 import { redirect } from "next/navigation";
 import { getDb } from "@/db/client";
-import { todayWeekday } from "@/features/settings/owner-settings";
+import { todayIsoDate } from "@/features/settings/owner-settings";
 import {
   WorkoutError,
   abandonSession,
@@ -39,7 +39,7 @@ export async function startWorkoutAction(formData: FormData) {
   const option = Number(formData.get("option")) || undefined;
   try {
     await startWorkout(db, {
-      weekday: await todayWeekday(db, owner.id, new Date()),
+      date: await todayIsoDate(db, owner.id, new Date()),
       option,
       idempotencyKey: String(formData.get("key") ?? ""),
     });

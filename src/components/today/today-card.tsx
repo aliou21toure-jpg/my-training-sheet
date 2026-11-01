@@ -80,7 +80,7 @@ export function TodayCard({ view, startKey }: { view: TodayView; startKey: strin
     );
   }
 
-  if (day.kind === "choice") return <ChoiceCard day={day} eyebrow={eyebrow} startKey={startKey} />;
+  if (day.kind === "choice") return <ChoiceCard day={day} eyebrow={eyebrow} startKey={startKey} initialOption={view.todayOption} />;
 
   const main = day.variants[0];
   return (

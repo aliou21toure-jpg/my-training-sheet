@@ -9,6 +9,7 @@ import { and, eq, gte, inArray } from "drizzle-orm";
 import { personalSettings, workoutSessions } from "@/db/schema";
 import type { Db } from "@/db/types";
 import { BLOCK_KIND_LABELS } from "@/features/import/format";
+import { resolveRange } from "@/features/schedule/schedule";
 import { loadActiveProgram, type PlannedDay } from "@/features/program/load-program";
 import {
   DEFAULT_TIME_ZONE,
@@ -46,6 +47,8 @@ export interface TodayView {
   displayName: string | null;
   programVersion: number | null;
   today: PlannedDay | null;
+  /** Saturday: option chosen in advance in the calendar. */
+  todayOption: number | null;
   /** Already trained today (a completed session on this local date). */
   doneToday: boolean;
   activeSessionId: string | null;
@@ -90,7 +93,10 @@ export async function getTodayView(db: Db, ownerId: string, now: Date): Promise<
   const { isoDate, weekday, hour } = localDateInfo(now, timeZone);
 
   const program = await loadActiveProgram(db);
-  const dayFor = (wd: number) => program?.days.find((d) => d.weekday === wd);
+  const dates = weekDates(isoDate, weekday);
+  const nextDates = [addDays(isoDate, 1), addDays(isoDate, 2)];
+  const schedule = await resolveRange(db, program, [...new Set([...dates, ...nextDates])]);
+  const dayOn = (date: string) => schedule.get(date)?.day ?? undefined;
 
   // Sessions of the last 8 days are enough to cover the current week in any time zone.
   const since = new Date(now.getTime() - 8 * 86_400_000);
@@ -104,10 +110,9 @@ export async function getTodayView(db: Db, ownerId: string, now: Date): Promise<
   );
   const active = recent.find((s) => s.status === "in_progress" || s.status === "paused");
 
-  const dates = weekDates(isoDate, weekday);
   const week: WeekDay[] = dates.map((date, i) => {
     const wd = i + 1;
-    const day = dayFor(wd);
+    const day = dayOn(date);
     let status: WeekDayStatus;
     if (completedDates.has(date)) status = "done";
     else if (!program) status = "none";
@@ -121,10 +126,9 @@ export async function getTodayView(db: Db, ownerId: string, now: Date): Promise<
 
   const upcoming: UpcomingDay[] = [];
   if (program) {
-    for (let i = 1; i <= 2; i++) {
-      const date = addDays(isoDate, i);
-      const wd = ((weekday - 1 + i) % 7) + 1;
-      const day = dayFor(wd);
+    for (const date of nextDates) {
+      const wd = schedule.get(date)!.weekday;
+      const day = dayOn(date);
       if (!day) continue;
       upcoming.push({ isoDate: date, weekday: wd, dayOfMonth: dayOfMonth(date), kind: day.kind, ...describeDay(day) });
     }
@@ -136,12 +140,13 @@ export async function getTodayView(db: Db, ownerId: string, now: Date): Promise<
     greeting: greetingFor(hour),
     displayName: settings?.displayName ?? null,
     programVersion: program?.version ?? null,
-    today: dayFor(weekday) ?? null,
+    today: dayOn(isoDate) ?? null,
+    todayOption: schedule.get(isoDate)?.optionNumber ?? null,
     doneToday: completedDates.has(isoDate),
     activeSessionId: active?.id ?? null,
     week,
     completedThisWeek: week.filter((d) => d.status === "done").length,
-    plannedThisWeek: dates.filter((_, i) => isTrainingDay(dayFor(i + 1))).length,
+    plannedThisWeek: dates.filter((d) => isTrainingDay(dayOn(d))).length,
     upcoming,
   };
 }

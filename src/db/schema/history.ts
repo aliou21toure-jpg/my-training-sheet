@@ -40,7 +40,8 @@ export const plannedSessions = pgTable(
     movedFrom: date("moved_from"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("planned_sessions_date_idx").on(t.date)],
+  // One schedule exception per calendar day: the calendar upserts on it.
+  (t) => [uniqueIndex("planned_sessions_date_unique").on(t.date)],
 );
 
 export const workoutSessions = pgTable(

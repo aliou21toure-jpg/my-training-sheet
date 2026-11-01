@@ -8,7 +8,7 @@ export async function getTimeZone(db: Db, ownerId: string): Promise<string> {
   return row?.tz ?? DEFAULT_TIME_ZONE;
 }
 
-/** Today's ISO weekday (1 = Monday) in the owner's time zone. */
-export async function todayWeekday(db: Db, ownerId: string, now: Date): Promise<number> {
-  return localDateInfo(now, await getTimeZone(db, ownerId)).weekday;
+/** Today's calendar date ("2026-11-02") in the owner's time zone. */
+export async function todayIsoDate(db: Db, ownerId: string, now: Date): Promise<string> {
+  return localDateInfo(now, await getTimeZone(db, ownerId)).isoDate;
 }
