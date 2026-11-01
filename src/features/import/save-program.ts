@@ -20,13 +20,21 @@ import {
 import type { Db } from "@/db/types";
 import type { ImportIssue, ProgramDraft } from "./types";
 
-export interface SaveProgramInput {
+/** Where a new program version comes from: an Excel import, or the in-app editor. */
+export interface ImportInput {
+  source?: "import";
   program: ProgramDraft;
   issues: ImportIssue[];
   fileName: string;
   fileSize: number;
   fileSha256: string;
 }
+export interface EditInput {
+  source: "edit";
+  program: ProgramDraft;
+  issues: ImportIssue[];
+}
+export type SaveProgramInput = ImportInput | EditInput;
 
 export type SaveProgramResult =
   | { ok: true; programId: string; version: number; exerciseCount: number }
@@ -52,29 +60,34 @@ async function versionOfFile(db: Db, fileSha256: string): Promise<number | null>
 }
 
 export async function saveProgramDraft(db: Db, input: SaveProgramInput): Promise<SaveProgramResult> {
-  const existing = await db
-    .select({ id: importBatches.id })
-    .from(importBatches)
-    .where(eq(importBatches.fileSha256, input.fileSha256))
-    .limit(1);
-  if (existing.length > 0) {
-    return { ok: false, reason: "duplicate", version: await versionOfFile(db, input.fileSha256) };
+  const file = input.source === "edit" ? null : input;
+  if (file) {
+    const existing = await db
+      .select({ id: importBatches.id })
+      .from(importBatches)
+      .where(eq(importBatches.fileSha256, file.fileSha256))
+      .limit(1);
+    if (existing.length > 0) {
+      return { ok: false, reason: "duplicate", version: await versionOfFile(db, file.fileSha256) };
+    }
   }
 
   try {
     return await db.transaction(async (tx) => {
-      const [batch] = await tx
-        .insert(importBatches)
-        .values({
-          fileName: input.fileName,
-          fileSha256: input.fileSha256,
-          fileSize: input.fileSize,
-          status: "imported",
-          sheetNames: input.program.days.flatMap((d) => (d.sheetName ? [d.sheetName] : [])),
-          report: input.issues,
-          importedAt: sql`now()`,
-        })
-        .returning({ id: importBatches.id });
+      const [batch] = file
+        ? await tx
+            .insert(importBatches)
+            .values({
+              fileName: file.fileName,
+              fileSha256: file.fileSha256,
+              fileSize: file.fileSize,
+              status: "imported",
+              sheetNames: input.program.days.flatMap((d) => (d.sheetName ? [d.sheetName] : [])),
+              report: input.issues,
+              importedAt: sql`now()`,
+            })
+            .returning({ id: importBatches.id })
+        : [null];
 
       const [latest] = await tx
         .select({ version: trainingPrograms.version })
@@ -89,7 +102,7 @@ export async function saveProgramDraft(db: Db, input: SaveProgramInput): Promise
       const [program] = await tx
         .insert(trainingPrograms)
         .values({
-          importBatchId: batch!.id,
+          importBatchId: batch?.id ?? null,
           version,
           title: input.program.title,
           summary: input.program.summary,
@@ -104,10 +117,22 @@ export async function saveProgramDraft(db: Db, input: SaveProgramInput): Promise
 
       // Shared exercise catalogue, matched case-insensitively.
       const exerciseIds = new Map<string, string>();
-      const exerciseId = async (name: string): Promise<string> => {
+      const exerciseId = async (name: string, editedId?: string): Promise<string> => {
         const key = name.trim().toLowerCase();
         const known = exerciseIds.get(key);
         if (known) return known;
+        // Editor: a renamed exercise keeps its history (typo fix), unless the
+        // new name is already another exercise — then it joins that one.
+        if (editedId) {
+          const [byName] = await tx.select({ id: exercises.id }).from(exercises).where(sql`lower(${exercises.name}) = ${key}`).limit(1);
+          if (!byName) {
+            const renamed = await tx.update(exercises).set({ name: name.trim() }).where(eq(exercises.id, editedId)).returning({ id: exercises.id });
+            if (renamed[0]) {
+              exerciseIds.set(key, renamed[0].id);
+              return renamed[0].id;
+            }
+          }
+        }
         const [found] = await tx
           .select({ id: exercises.id })
           .from(exercises)
@@ -164,7 +189,7 @@ export async function saveProgramDraft(db: Db, input: SaveProgramInput): Promise
               const t = p.target;
               await tx.insert(plannedExercises).values({
                 blockId: b!.id,
-                exerciseId: await exerciseId(ex.name),
+                exerciseId: await exerciseId(ex.name, ex.exerciseId),
                 position: ex.position,
                 rawName: ex.rawName,
                 note: ex.note,
@@ -194,8 +219,8 @@ export async function saveProgramDraft(db: Db, input: SaveProgramInput): Promise
     });
   } catch (error) {
     // Two saves of the same file at the same instant: the unique hash wins.
-    if (isUniqueViolation(error)) {
-      return { ok: false, reason: "duplicate", version: await versionOfFile(db, input.fileSha256) };
+    if (file && isUniqueViolation(error)) {
+      return { ok: false, reason: "duplicate", version: await versionOfFile(db, file.fileSha256) };
     }
     throw error;
   }

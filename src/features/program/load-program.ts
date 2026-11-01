@@ -19,6 +19,9 @@ export interface PlannedExercise {
   id: string;
   exerciseId: string;
   name: string;
+  rawName: string;
+  components: string[];
+  restSourceText: string;
   note: string | null;
   alternatives: string[];
   prescription: ParsedPrescription;
@@ -31,6 +34,7 @@ export interface PlannedBlock {
   position: number;
   kind: BlockKind;
   name: string;
+  rawTitle: string;
   durationText: string | null;
   durationMinutes: number | null;
   rounds: number | null;
@@ -64,6 +68,9 @@ export interface ActiveProgram {
   id: string;
   version: number;
   title: string | null;
+  summary: string | null;
+  /** Warm-up / cool-down, rules and notes, as imported. */
+  reference: Record<string, unknown>;
   days: PlannedDay[];
 }
 
@@ -128,6 +135,9 @@ export async function loadActiveProgram(db: Db): Promise<ActiveProgram | null> {
       id: row.id,
       exerciseId: row.exerciseId,
       name,
+      rawName: row.rawName,
+      components: row.components,
+      restSourceText: row.restSourceText,
       note: row.note,
       alternatives: row.alternatives,
       prescription: prescriptionFromRow(row),
@@ -145,6 +155,7 @@ export async function loadActiveProgram(db: Db): Promise<ActiveProgram | null> {
       position: b.position,
       kind: b.kind,
       name: b.name,
+      rawTitle: b.rawTitle,
       durationText: b.durationText,
       durationMinutes: b.durationMinutes,
       rounds: b.rounds,
@@ -168,6 +179,8 @@ export async function loadActiveProgram(db: Db): Promise<ActiveProgram | null> {
     id: program.id,
     version: program.version,
     title: program.title,
+    summary: program.summary,
+    reference: program.reference,
     days: templates.map((t) => ({
       id: t.id,
       weekday: t.weekday,

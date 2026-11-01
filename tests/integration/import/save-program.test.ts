@@ -13,15 +13,15 @@ import type { Db } from "@/db/types";
 import { workbookFingerprint } from "@/features/import/fingerprint";
 import { summarizeImport } from "@/features/import/format";
 import { parseWorkbook } from "@/features/import/parse-workbook";
-import { saveProgramDraft, type SaveProgramInput } from "@/features/import/save-program";
+import { saveProgramDraft, type ImportInput } from "@/features/import/save-program";
 import { buildSampleWorkbook, buildWorkbook, sampleSheets } from "../../fixtures/sample-workbook";
 import { createTestDb } from "../db/test-db";
 
 let t: Awaited<ReturnType<typeof createTestDb>>;
 let db: Db;
-let input: SaveProgramInput;
+let input: ImportInput;
 
-async function inputFrom(bytes: Uint8Array, fileName = "program.xlsx"): Promise<SaveProgramInput> {
+async function inputFrom(bytes: Uint8Array, fileName = "program.xlsx"): Promise<ImportInput> {
   const result = await parseWorkbook(bytes);
   if (!result.ok) throw new Error(result.error.message);
   return { program: result.program, issues: result.issues, fileName, fileSize: bytes.byteLength, fileSha256: workbookFingerprint(bytes) };

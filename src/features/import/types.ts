@@ -40,6 +40,8 @@ export type BlockKind =
 export type Selection = "all" | "pickOne" | "pickAny";
 
 export interface ExerciseDraft {
+  /** Set by the program editor: the catalogue exercise this row already uses. */
+  exerciseId?: string;
   position: number;
   /** Cell text exactly as written. */
   rawName: string;
