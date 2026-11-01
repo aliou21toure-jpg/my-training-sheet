@@ -24,6 +24,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except the sign-in page, Next internals and static files.
-  matcher: ["/((?!sign-in|_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|ico|webmanifest)$).*)"],
+  // Everything except sign-in, API routes (they answer 401 themselves), Next internals and static files.
+  matcher: ["/((?!sign-in|api/|_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|ico|webmanifest)$).*)"],
 };

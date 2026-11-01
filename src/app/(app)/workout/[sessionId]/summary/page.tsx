@@ -8,7 +8,9 @@ import { BLOCK_KIND_LABELS } from "@/features/import/format";
 import { formatClock, formatLogged } from "@/features/workouts/set-values";
 import { getPersonalBests, getSession } from "@/features/workouts/session";
 import { findNewRecords, summarizeSession, type NewRecord } from "@/features/workouts/summary";
+import { getOwnerSettings } from "@/features/settings/owner-settings";
 import { requireOwner } from "@/lib/auth/current-owner";
+import { formatWeight, type WeightUnit } from "@/lib/units";
 
 export default function SummaryPage({ params }: PageProps<"/workout/[sessionId]/summary">) {
   return (
@@ -18,18 +20,17 @@ export default function SummaryPage({ params }: PageProps<"/workout/[sessionId]/
   );
 }
 
-const formatKg = (n: number) => `${String(n).replace(".", ",")} kg`;
-
-function recordText(r: NewRecord) {
-  if (r.kind === "weight") return `${formatKg(r.value)} (avant : ${formatKg(r.previous)})`;
+function recordText(r: NewRecord, unit: WeightUnit) {
+  if (r.kind === "weight") return `${formatWeight(r.value, unit)} (avant : ${formatWeight(r.previous, unit)})`;
   if (r.kind === "reps") return `${r.value} reps (avant : ${r.previous})`;
   return `${r.value} s (avant : ${r.previous} s)`;
 }
 
 async function Summary({ params }: Pick<PageProps<"/workout/[sessionId]/summary">, "params">) {
   await connection();
-  await requireOwner();
+  const owner = await requireOwner();
   const db = getDb();
+  const { unit } = await getOwnerSettings(db, owner.id);
   const { sessionId } = await params;
   const session = await getSession(db, sessionId);
   if (!session) notFound();
@@ -43,7 +44,7 @@ async function Summary({ params }: Pick<PageProps<"/workout/[sessionId]/summary"
     { label: "Durée", value: formatClock(summary.activeSeconds) },
     { label: "Séries validées", value: String(summary.completedSets) },
     { label: "Exercices", value: `${summary.exercisesDone}` },
-    { label: "Volume", value: summary.volumeKg === null ? "—" : formatKg(Math.round(summary.volumeKg)) },
+    { label: "Volume", value: summary.volumeKg === null ? "—" : formatWeight(Math.round(summary.volumeKg), unit) },
   ];
 
   return (
@@ -73,7 +74,7 @@ async function Summary({ params }: Pick<PageProps<"/workout/[sessionId]/summary"
           <h2 className="flex items-center gap-2 text-[17px] font-semibold"><Trophy aria-hidden size={20} /> Nouveaux records</h2>
           <ul className="flex flex-col gap-1 text-[15px]">
             {records.map((r) => (
-              <li key={r.exerciseId}><span className="font-semibold">{r.name}</span> · {recordText(r)}</li>
+              <li key={r.exerciseId}><span className="font-semibold">{r.name}</span> · {recordText(r, unit)}</li>
             ))}
           </ul>
         </section>
@@ -92,7 +93,7 @@ async function Summary({ params }: Pick<PageProps<"/workout/[sessionId]/summary"
                     <p className="text-[13px] text-text-muted">{BLOCK_KIND_LABELS[block.kind]} · prévu {e.plannedLabel}</p>
                   </div>
                   <p className="shrink-0 text-right text-[14px] tabular-nums text-text-muted">
-                    {sets.length ? sets.map((l) => formatLogged(l, e)).join(" · ") : "non fait"}
+                    {sets.length ? sets.map((l) => formatLogged(l, e, unit)).join(" · ") : "non fait"}
                   </p>
                 </li>
               );

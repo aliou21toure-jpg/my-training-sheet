@@ -9,6 +9,7 @@ import type { SessionView } from "@/features/workouts/session";
 import { draftFromLog, formatClock, parseSetDraft, type SetDraft } from "@/features/workouts/set-values";
 import type { SnapshotExercise } from "@/features/workouts/snapshot";
 import type { LoggedSet } from "@/features/workouts/summary";
+import { formatDisplayNumber, type WeightUnit } from "@/lib/units";
 import { ExerciseCard, type Field } from "./exercise-card";
 import { queueItemId, useSaveQueue, type QueueItem } from "./use-save-queue";
 import { useRestTimer, useSessionClock } from "./use-timers";
@@ -22,7 +23,7 @@ function emptyDraft(setNumber: number): SetDraft {
   return { setNumber, weight: "", reps: "", duration: "", completed: false };
 }
 
-function initialDrafts(session: SessionView): Drafts {
+function initialDrafts(session: SessionView, unit: WeightUnit): Drafts {
   const drafts: Drafts = {};
   for (const block of session.snapshot.blocks) {
     for (const e of block.exercises) {
@@ -30,7 +31,7 @@ function initialDrafts(session: SessionView): Drafts {
       const rows = Math.max(e.plannedSets, ...logs.map((l) => l.setNumber));
       drafts[e.key] = Array.from({ length: rows }, (_, i) => {
         const log = logs.find((l) => l.setNumber === i + 1);
-        return log ? draftFromLog(log, e) : emptyDraft(i + 1);
+        return log ? draftFromLog(log, e, unit) : emptyDraft(i + 1);
       });
     }
   }
@@ -39,12 +40,12 @@ function initialDrafts(session: SessionView): Drafts {
 
 const isComplete = (rows: SetDraft[] | undefined) => !!rows && rows.length > 0 && rows.every((r) => r.completed);
 
-export function WorkoutScreen({ session, previous }: { session: SessionView; previous: Record<string, LoggedSet[]> }) {
+export function WorkoutScreen({ session, previous, unit }: { session: SessionView; previous: Record<string, LoggedSet[]>; unit: WeightUnit }) {
   const snapshot = session.snapshot;
   const exercises = useMemo(() => snapshot.blocks.flatMap((b) => b.exercises.map((e) => ({ e, block: b }))), [snapshot]);
   const byKey = useMemo(() => new Map(exercises.map((x) => [x.e.key, x])), [exercises]);
 
-  const [drafts, setDraftsState] = useState<Drafts>(() => initialDrafts(session));
+  const [drafts, setDraftsState] = useState<Drafts>(() => initialDrafts(session, unit));
   // Event handlers read the latest drafts from this ref; every update goes through writeDrafts.
   const draftsRef = useRef(drafts);
   const writeDrafts = useCallback((update: (current: Drafts) => Drafts) => {
@@ -78,13 +79,13 @@ export function WorkoutScreen({ session, previous }: { session: SessionView; pre
             continue;
           }
           while (rows.length < item.payload.setNumber) rows.push(emptyDraft(rows.length + 1));
-          rows[item.payload.setNumber - 1] = draftFromLog({ ...item.payload, exerciseId: x.e.exerciseId }, x.e);
+          rows[item.payload.setNumber - 1] = draftFromLog({ ...item.payload, exerciseId: x.e.exerciseId }, x.e, unit);
           next[x.e.key] = rows;
         }
         return next;
       });
     },
-    [byKey, writeDrafts],
+    [byKey, writeDrafts, unit],
   );
 
   const queue = useSaveQueue(session.id, restore);
@@ -107,7 +108,7 @@ export function WorkoutScreen({ session, previous }: { session: SessionView; pre
 
     const draft = override ?? draftsRef.current[e.key]?.find((d) => d.setNumber === setNumber);
     if (!draft) return;
-    const parsed = parseSetDraft(draft, e);
+    const parsed = parseSetDraft(draft, e, unit);
     if (!parsed.ok) return markInvalid(e.key, setNumber, parsed.field);
     markInvalid(e.key, setNumber, null);
     queue.enqueue({
@@ -143,9 +144,9 @@ export function WorkoutScreen({ session, previous }: { session: SessionView; pre
     const filled: SetDraft = completing && prev
       ? {
           ...current,
-          weight: current.weight || (prev.weightKg != null ? String(prev.weightKg).replace(".", ",") : ""),
+          weight: current.weight || (prev.weightKg != null ? formatDisplayNumber(prev.weightKg, unit) : ""),
           reps: current.reps || (prev.reps != null ? String(prev.reps) : ""),
-          duration: current.duration || draftFromLog(prev, e).duration,
+          duration: current.duration || draftFromLog(prev, e, unit).duration,
         }
       : current;
     const next = { ...filled, completed: completing };
@@ -306,6 +307,7 @@ export function WorkoutScreen({ session, previous }: { session: SessionView; pre
                 <ExerciseCard
                   key={e.key}
                   exercise={e}
+                  unit={unit}
                   rowLabel={block.rounds && !block.exercises.some((x) => x.plannedSets !== block.rounds) ? "Tour" : "Série"}
                   drafts={drafts[e.key] ?? []}
                   previous={previous[e.exerciseId]}

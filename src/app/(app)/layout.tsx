@@ -1,5 +1,8 @@
 import { Suspense } from "react";
 import { AppNav } from "@/components/layout/app-nav";
+import { ThemeSync } from "@/components/layout/theme-sync";
+import { getDb } from "@/db/client";
+import { getOwnerSettings } from "@/features/settings/owner-settings";
 import { requireOwner } from "@/lib/auth/current-owner";
 
 /**
@@ -18,6 +21,12 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 }
 
 async function OwnerGate({ children }: { children: React.ReactNode }) {
-  await requireOwner();
-  return <>{children}</>;
+  const owner = await requireOwner();
+  const { theme } = await getOwnerSettings(getDb(), owner.id);
+  return (
+    <>
+      <ThemeSync theme={theme} />
+      {children}
+    </>
+  );
 }

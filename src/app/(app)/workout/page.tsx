@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { TodayCard } from "@/components/today/today-card";
 import { WorkoutScreen } from "@/components/workout/workout-screen";
 import { getDb } from "@/db/client";
+import { getOwnerSettings } from "@/features/settings/owner-settings";
 import { getTodayView } from "@/features/today/get-today";
 import { getActiveSessionId, getPreviousPerformance, getSession } from "@/features/workouts/session";
 import { requireOwner } from "@/lib/auth/current-owner";
@@ -32,7 +33,8 @@ async function Workout({ searchParams }: Pick<PageProps<"/workout">, "searchPara
   if (session) {
     const ids = [...new Set(session.snapshot.blocks.flatMap((b) => b.exercises.map((e) => e.exerciseId)))];
     const previous = Object.fromEntries(await getPreviousPerformance(db, ids, session.id));
-    return <WorkoutScreen session={session} previous={previous} />;
+    const { unit } = await getOwnerSettings(db, owner.id);
+    return <WorkoutScreen session={session} previous={previous} unit={unit} />;
   }
 
   // No workout in progress: show today's plan with its start button.

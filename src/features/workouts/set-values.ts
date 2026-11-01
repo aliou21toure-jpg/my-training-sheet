@@ -2,6 +2,7 @@
  * Turning what is typed in the gym into numbers, and back. Pure functions.
  * "42,5" (French decimal comma) and "42.5" are both accepted.
  */
+import { formatDisplayNumber, fromDisplayWeight, type WeightUnit } from "@/lib/units";
 import type { SnapshotExercise } from "./snapshot";
 import type { LoggedSet } from "./summary";
 
@@ -19,7 +20,8 @@ export type ParsedSet =
 
 const clean = (s: string) => s.trim().replace(",", ".");
 
-export function parseSetDraft(draft: SetDraft, exercise: Pick<SnapshotExercise, "input" | "durationUnit">): ParsedSet {
+/** Typed values → stored values. Weights typed in lb are converted to kg. */
+export function parseSetDraft(draft: SetDraft, exercise: Pick<SnapshotExercise, "input" | "durationUnit">, unit: WeightUnit = "kg"): ParsedSet {
   const num = (s: string) => (clean(s) === "" ? null : Number(clean(s)));
 
   if (exercise.input === "duration") {
@@ -32,18 +34,18 @@ export function parseSetDraft(draft: SetDraft, exercise: Pick<SnapshotExercise, 
   }
 
   const weight = num(draft.weight);
-  if (weight !== null && (!Number.isFinite(weight) || weight < 0 || weight > 999.75)) return { ok: false, field: "weight" };
+  if (weight !== null && (!Number.isFinite(weight) || weight < 0 || fromDisplayWeight(weight, unit) > 999.75)) return { ok: false, field: "weight" };
   const reps = num(draft.reps);
   if (reps !== null && (!Number.isInteger(reps) || reps < 0 || reps > 999)) return { ok: false, field: "reps" };
-  return { ok: true, weightKg: weight === null ? null : Math.round(weight * 100) / 100, reps, durationSeconds: null };
+  return { ok: true, weightKg: weight === null ? null : fromDisplayWeight(weight, unit), reps, durationSeconds: null };
 }
 
 const formatNumber = (n: number) => (Number.isInteger(n) ? String(n) : String(n).replace(".", ","));
 
-export function draftFromLog(log: LoggedSet, exercise: Pick<SnapshotExercise, "durationUnit">): SetDraft {
+export function draftFromLog(log: LoggedSet, exercise: Pick<SnapshotExercise, "durationUnit">, unit: WeightUnit = "kg"): SetDraft {
   return {
     setNumber: log.setNumber,
-    weight: log.weightKg === null ? "" : formatNumber(log.weightKg),
+    weight: log.weightKg === null ? "" : formatDisplayNumber(log.weightKg, unit),
     reps: log.reps === null ? "" : String(log.reps),
     duration:
       log.durationSeconds === null
@@ -56,21 +58,21 @@ export function draftFromLog(log: LoggedSet, exercise: Pick<SnapshotExercise, "d
 }
 
 /** "40 × 10", "45 s", "20 min", "× 12" (no weight) — for the "previous" column. */
-export function formatLogged(log: LoggedSet | undefined, exercise: Pick<SnapshotExercise, "durationUnit">): string {
+export function formatLogged(log: LoggedSet | undefined, exercise: Pick<SnapshotExercise, "durationUnit">, unit: WeightUnit = "kg"): string {
   if (!log) return "—";
   if (log.durationSeconds !== null) {
     return exercise.durationUnit === "min" ? `${formatNumber(Math.round((log.durationSeconds / 60) * 10) / 10)} min` : `${log.durationSeconds} s`;
   }
-  if (log.weightKg !== null && log.reps !== null) return `${formatNumber(log.weightKg)} × ${log.reps}`;
+  if (log.weightKg !== null && log.reps !== null) return `${formatDisplayNumber(log.weightKg, unit)} × ${log.reps}`;
   if (log.reps !== null) return `× ${log.reps}`;
-  if (log.weightKg !== null) return `${formatNumber(log.weightKg)} kg`;
+  if (log.weightKg !== null) return `${formatDisplayNumber(log.weightKg, unit)} ${unit}`;
   return "—";
 }
 
 /** "Dernière fois : 3 séries, 40 kg max" style one-liner. */
-export function describePrevious(logs: LoggedSet[] | undefined, exercise: Pick<SnapshotExercise, "durationUnit">): string | null {
+export function describePrevious(logs: LoggedSet[] | undefined, exercise: Pick<SnapshotExercise, "durationUnit">, unit: WeightUnit = "kg"): string | null {
   if (!logs || logs.length === 0) return null;
-  return logs.map((l) => formatLogged(l, exercise)).join(" · ");
+  return logs.map((l) => formatLogged(l, exercise, unit)).join(" · ");
 }
 
 export function formatClock(totalSeconds: number): string {

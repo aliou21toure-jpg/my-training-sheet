@@ -5,11 +5,13 @@ import { formatSeconds } from "@/features/import/format";
 import type { SnapshotExercise } from "@/features/workouts/snapshot";
 import { describePrevious, formatLogged, type SetDraft } from "@/features/workouts/set-values";
 import type { LoggedSet } from "@/features/workouts/summary";
+import { formatDisplayNumber, type WeightUnit } from "@/lib/units";
 
 export type Field = "weight" | "reps" | "duration";
 
 interface Props {
   exercise: SnapshotExercise;
+  unit: WeightUnit;
   rowLabel: string;
   drafts: SetDraft[];
   previous: LoggedSet[] | undefined;
@@ -32,7 +34,7 @@ export function ExerciseCard(p: Props) {
   const done = p.drafts.filter((d) => d.completed).length;
   const allDone = done === p.drafts.length && p.drafts.length > 0;
   const prevBySet = new Map(p.previous?.map((l) => [l.setNumber, l]));
-  const previousLine = describePrevious(p.previous, e);
+  const previousLine = describePrevious(p.previous, e, p.unit);
   const isDuration = e.input === "duration";
   const unit = e.durationUnit === "min" ? "min" : "s";
   const repsHint = e.targetRepsMin === null ? undefined : e.targetRepsMin === e.targetRepsMax ? String(e.targetRepsMin) : `${e.targetRepsMin}–${e.targetRepsMax}`;
@@ -80,7 +82,7 @@ export function ExerciseCard(p: Props) {
                 <span role="columnheader" className="text-center">Durée ({unit})</span>
               ) : (
                 <>
-                  <span role="columnheader" className="text-center">kg</span>
+                  <span role="columnheader" className="text-center">{p.unit}</span>
                   <span role="columnheader" className="text-center">Reps</span>
                 </>
               )}
@@ -98,7 +100,7 @@ export function ExerciseCard(p: Props) {
                   className={`grid ${cols} items-center gap-2 rounded-xl px-1 py-1 transition-colors ${d.completed ? "bg-accent-soft" : ""}`}
                 >
                   <span role="cell" className={`text-center text-[16px] font-bold ${d.completed ? "text-accent" : ""}`}>{d.setNumber}</span>
-                  <span role="cell" className="truncate text-[14px] tabular-nums text-text-muted">{formatLogged(prev, e)}</span>
+                  <span role="cell" className="truncate text-[14px] tabular-nums text-text-muted">{formatLogged(prev, e, p.unit)}</span>
                   {isDuration ? (
                     <span role="cell">
                       <input
@@ -120,13 +122,13 @@ export function ExerciseCard(p: Props) {
                       <span role="cell">
                         <input
                           id={`${id}-weight`}
-                          aria-label={`${p.rowLabel} ${d.setNumber}, poids en kg`}
+                          aria-label={`${p.rowLabel} ${d.setNumber}, poids en ${p.unit}`}
                           aria-invalid={bad("weight")}
                           inputMode="decimal"
                           enterKeyHint="next"
                           disabled={p.disabled}
                           value={d.weight}
-                          placeholder={prev?.weightKg != null ? String(prev.weightKg).replace(".", ",") : "—"}
+                          placeholder={prev?.weightKg != null ? formatDisplayNumber(prev.weightKg, p.unit) : "—"}
                           onChange={(ev) => p.onChange(d.setNumber, "weight", ev.target.value)}
                           onBlur={() => p.onCommit(d.setNumber)}
                           className={inputClass}

@@ -3,8 +3,7 @@
 /*
  * Design tokens — My Training Sheet
  * One neutral iOS-like base + a single soft violet accent.
- * Light values on :root, dark values under prefers-color-scheme
- * (a later task adds an explicit Light / Dark / System toggle).
+ * Light values on :root, dark values on [data-theme="dark"].
  */
 :root {
   --bg: #f2f2f7;
@@ -21,8 +20,10 @@
   --warn-soft: #fff1dc;
 }
 
+/* The theme script in the root layout sets data-theme="light" | "dark"
+   (resolving "system" from the OS). Without JavaScript, the OS decides. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #000000;
     --card: #1c1c1e;
     --text: #f5f5f7;
@@ -37,6 +38,24 @@
     --warn-soft: #3a2a12;
   }
 }
+
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --card: #1c1c1e;
+  --text: #f5f5f7;
+  --text-muted: #98989f;
+  --fill: #2c2c2e;
+  --line: rgb(255 255 255 / 0.1);
+  --accent: #a496ff;
+  --accent-soft: #2b2652;
+  --on-accent: #15112e;
+  --positive: #4cd08a;
+  --warn: #ffc266;
+  --warn-soft: #3a2a12;
+  color-scheme: dark;
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme inline {
   --color-bg: var(--bg);
