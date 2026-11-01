@@ -46,7 +46,7 @@ export function CalendarView({ data }: { data: CalendarData }) {
       <header className="flex items-end justify-between gap-3 px-1">
         <div>
           <h1 className="text-[32px] font-bold leading-tight tracking-tight">Calendrier</h1>
-          <p className="text-[15px] capitalize text-text-muted">{data.label}</p>
+          <p className="text-[15px] text-text-muted">{data.label}</p>
         </div>
         <div role="radiogroup" aria-label="Vue" className="grid grid-cols-2 gap-0.5 rounded-xl bg-fill p-0.5">
           {(["week", "month"] as const).map((v) => (

@@ -14,7 +14,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "owner:create": "tsx --env-file-if-exists=.env.local scripts/create-owner.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "demo:seed": "tsx --env-file-if-exists=.env.local scripts/seed-demo.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
@@ -45,5 +46,6 @@
     "typescript": "^5",
     "vitest": "^5.0.5"
   },
-  "packageManager": "pnpm@10.28.0"
+  "packageManager": "pnpm@10.28.0",
+  "license": "MIT"
 }

@@ -71,7 +71,8 @@ function rangeFor(view: CalendarView, anchor: string): { dates: string[]; label:
   prevMonth.setUTCMonth(prevMonth.getUTCMonth() - 1);
   const dates: string[] = [];
   for (let d = start; d < nextFirst || dates.length % 7 !== 0; d = addDays(d, 1)) dates.push(d);
-  return { dates, label: monthLabel(first), prev: prevMonth.toISOString().slice(0, 10), next: nextFirst };
+  const month = monthLabel(first);
+  return { dates, label: month.charAt(0).toUpperCase() + month.slice(1), prev: prevMonth.toISOString().slice(0, 10), next: nextFirst };
 }
 
 export async function getCalendar(db: Db, ownerId: string, now: Date, view: CalendarView, anchorInput: string | null): Promise<CalendarData> {

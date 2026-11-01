@@ -181,7 +181,8 @@ export async function getProgress(db: Db, ownerId: string, now: Date, range: Pro
     });
   }
 
-  const chosen = summaries.find((s) => s.id === exerciseId) ?? summaries[0] ?? null;
+  // Default: the most practised lift with a weight (the most telling curve), else the most practised exercise.
+  const chosen = summaries.find((s) => s.id === exerciseId) ?? summaries.find((s) => s.metric === "weight" && s.sessions >= 2) ?? summaries[0] ?? null;
   const selected = chosen
     ? { ...chosen, points: (allPoints.get(chosen.id) ?? []).filter((p) => p.date >= rangeStart) }
     : null;
