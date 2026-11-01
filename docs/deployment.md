@@ -13,6 +13,19 @@ DATABASE_URL="postgres://…-pooler…/neondb?sslmode=require" pnpm db:migrate
 DATABASE_URL="postgres://…-pooler…/neondb?sslmode=require" pnpm owner:create you@example.com "First name"
 ```
 
+### Alternative: a schema inside an existing Supabase project
+
+Free Supabase plans allow two active projects, so the app can share one with other demos, isolated in its own schema and role:
+
+```sql
+create role mts_app login password '<generated>';
+alter role mts_app set search_path = mts;
+create schema mts authorization mts_app;
+revoke all on schema mts from public;
+```
+
+Apply the migration files as `mts_app` after replacing `"public".` with `"mts".` (Drizzle writes the schema into enum and foreign-key names). The `mts` schema is not exposed by Supabase's REST API and other roles cannot read it. Use the **transaction pooler** URL with the role's tenant-qualified user: `postgres://mts_app.<project-ref>:<password>@aws-1-<region>.pooler.supabase.com:6543/postgres` (the client already disables prepared statements for it).
+
 ## 2. App (Vercel)
 
 1. Import the GitHub repository in Vercel (framework detected: Next.js).
