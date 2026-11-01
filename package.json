@@ -13,7 +13,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "owner:create": "tsx --env-file-if-exists=.env.local scripts/create-owner.ts"
+    "owner:create": "tsx --env-file-if-exists=.env.local scripts/create-owner.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",

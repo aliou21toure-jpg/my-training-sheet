@@ -28,3 +28,8 @@ export interface WeekBar {
 export function valueOf(p: ExercisePoint, metric: Metric): number | null {
   return metric === "weight" ? p.maxWeightKg : metric === "duration" ? p.maxDurationSeconds : p.maxReps;
 }
+
+/** Unit label of a metric: "kg"/"lb" for weights, "s" for durations, "reps" otherwise. */
+export function metricUnit(metric: Metric, unit: "kg" | "lb"): string {
+  return metric === "weight" ? unit : metric === "duration" ? "s" : "reps";
+}

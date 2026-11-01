@@ -6,17 +6,13 @@
  * screen readers. Missing values are gaps, never zeros.
  */
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { valueOf, type ExercisePoint, type Metric, type WeekBar } from "@/features/progress/metrics";
+import { metricUnit, valueOf, type ExercisePoint, type Metric, type WeekBar } from "@/features/progress/metrics";
 import { toDisplayWeight, type WeightUnit } from "@/lib/units";
 
 const AXIS = { fontSize: 12, fill: "var(--text-muted)" };
 const shortDate = (iso: string) =>
   new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
 const fr = (n: number) => String(n).replace(".", ",");
-
-export function metricUnit(metric: Metric, unit: WeightUnit) {
-  return metric === "weight" ? unit : metric === "duration" ? "s" : "reps";
-}
 
 function display(metric: Metric, v: number | null, unit: WeightUnit) {
   return v === null ? null : metric === "weight" ? toDisplayWeight(v, unit) : v;
@@ -41,7 +37,7 @@ export function ExerciseChart({ points, metric, unit, name }: { points: Exercise
     <figure className="flex flex-col gap-2">
       <div className="h-56 w-full" aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -8 }}>
+          <LineChart accessibilityLayer={false} data={data} margin={{ top: 8, right: 12, bottom: 0, left: -8 }}>
             <CartesianGrid vertical={false} stroke="var(--line)" />
             <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={false} minTickGap={16} />
             <YAxis tick={AXIS} tickLine={false} axisLine={false} width={44} domain={["auto", "auto"]} allowDecimals={metric === "weight"} />
@@ -98,7 +94,7 @@ export function WeeklyChart({ weeks }: { weeks: WeekBar[] }) {
     <figure className="flex flex-col gap-2">
       <div className="h-40 w-full" aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={weeks} margin={{ top: 8, right: 4, bottom: 0, left: -24 }} barCategoryGap="28%">
+          <BarChart accessibilityLayer={false} data={weeks} margin={{ top: 8, right: 4, bottom: 0, left: -24 }} barCategoryGap="28%">
             <CartesianGrid vertical={false} stroke="var(--line)" />
             <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={false} minTickGap={8} />
             <YAxis tick={AXIS} tickLine={false} axisLine={false} allowDecimals={false} width={32} />

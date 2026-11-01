@@ -9,7 +9,7 @@
   --bg: #f2f2f7;
   --card: #ffffff;
   --text: #1c1c1e;
-  --text-muted: #6c6c70;
+  --text-muted: #5f5f64; /* ≥ 5:1 on every light surface, chips included */
   --fill: #e9e9ee;
   --line: rgb(60 60 67 / 0.12);
   --accent: #5e4bd8;
