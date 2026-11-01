@@ -24,7 +24,7 @@ create schema mts authorization mts_app;
 revoke all on schema mts from public;
 ```
 
-Apply the migration files as `mts_app` after replacing `"public".` with `"mts".` (Drizzle writes the schema into enum and foreign-key names). The `mts` schema is not exposed by Supabase's REST API and other roles cannot read it. Use the **transaction pooler** URL with the role's tenant-qualified user: `postgres://mts_app.<project-ref>:<password>@aws-1-<region>.pooler.supabase.com:6543/postgres` (the client already disables prepared statements for it).
+Apply the migration files as `mts_app` after replacing `"public".` with `"mts".` (Drizzle writes the schema into enum and foreign-key names). The `mts` schema is not exposed by Supabase's REST API and other roles cannot read it. Use the **transaction pooler** URL with the role's tenant-qualified user: `postgres://mts_app.<project-ref>:<password>@<pooler-host>:6543/postgres`, where `<pooler-host>` is copied from Supabase → *Connect* → *Transaction pooler* (it is `aws-0-…` or `aws-1-…` depending on the project; the wrong one fails with "tenant/user not found"). The client already disables prepared statements for it.
 
 ## 2. App (Vercel)
 
