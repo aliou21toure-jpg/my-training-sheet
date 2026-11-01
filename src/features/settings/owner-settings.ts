@@ -12,3 +12,24 @@ export async function getTimeZone(db: Db, ownerId: string): Promise<string> {
 export async function todayIsoDate(db: Db, ownerId: string, now: Date): Promise<string> {
   return localDateInfo(now, await getTimeZone(db, ownerId)).isoDate;
 }
+
+export interface OwnerSettings {
+  displayName: string | null;
+  theme: "system" | "light" | "dark";
+  unit: "kg" | "lb";
+  timezone: string;
+  reminderEnabled: boolean;
+  reminderTime: string | null;
+}
+
+export async function getOwnerSettings(db: Db, ownerId: string): Promise<OwnerSettings> {
+  const [row] = await db.select().from(personalSettings).where(eq(personalSettings.ownerId, ownerId));
+  return {
+    displayName: row?.displayName ?? null,
+    theme: row?.theme ?? "system",
+    unit: row?.unit ?? "kg",
+    timezone: row?.timezone ?? DEFAULT_TIME_ZONE,
+    reminderEnabled: row?.reminderEnabled ?? false,
+    reminderTime: row?.reminderTime ? row.reminderTime.slice(0, 5) : null,
+  };
+}
